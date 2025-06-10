@@ -1,0 +1,13 @@
+name = "GeNIOSExperiments"
+uuid = "68a0aa72-c3eb-4be5-85d1-d41293039a1f"
+authors = ["Theo Diamandis"]
+version = "1.0.0-DEV"
+
+[compat]
+julia = "1.11.5"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
