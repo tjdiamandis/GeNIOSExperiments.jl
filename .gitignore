@@ -3,3 +3,9 @@
 *.jl.mem
 .DS_Store
 dev/
+.vscode/
+
+/experiments/data/
+/experiments/saved/
+/experiments/test*
+/experiments/figures/
