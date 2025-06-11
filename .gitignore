@@ -9,3 +9,4 @@ dev/
 /experiments/saved/
 /experiments/test*
 /experiments/figures/
+*-test.jl

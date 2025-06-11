@@ -14,7 +14,7 @@ const DATAPATH = joinpath(@__DIR__, "data")
 const DATAFILE_SPARSE = joinpath(DATAPATH, "real-sim.jld2")
 const DATAFILE_SPARSE_2 = joinpath(DATAPATH, "news20.jld2")
 const SAVEPATH = joinpath(@__DIR__, "saved")
-const SAVEFILE = "2-logistic-compare-may2025"
+const SAVEFILE = "2-logistic-compare-june2025"
 const FIGS_PATH = joinpath(@__DIR__, "figures")
 
 # Set this to false if you have not yet downloaded the real-sim dataset
@@ -32,6 +32,9 @@ function run_trial(; type, n=100)
     elseif type == "sparse"
         # real-sim dataset
         A_full, b_full = load_sparse_data(file=DATAFILE_SPARSE, have_data=HAVE_DATA_SPARSE, dataset_id=1578)
+        n = size(A_full, 2)
+        A_full = A_full[1:n, :]
+        b_full = b_full[1:n]
     elseif type == "sparse2"
         # news20 dataset
         A_full, b_full = load_sparse_data(file=DATAFILE_SPARSE_2, have_data=HAVE_DATA_SPARSE2, dataset_id=1594)
@@ -62,6 +65,7 @@ function run_trial(; type, n=100)
     ))
 
     # GeNIOS
+    @info "  -- GeNIOS --"
     solver = GeNIOS.LogisticSolver(λ1, λ2, A, b)
     options = GeNIOS.SolverOptions(
         relax=true,
@@ -78,9 +82,10 @@ function run_trial(; type, n=100)
     GC.gc()
     result = solve!(solver; options=options)
     time_genios = result.log.solve_time + result.log.setup_time
-    @info "    GeNIOS: $(time_genios)"
+    @info "    time: $(round(time_genios, digits=3))"
 
     # COSMO (indirect)
+    @info "  -- COSMO (indirect) --"
     model = construct_jump_model_logistic(A, b, λ1)
     set_optimizer(model, COSMO.Optimizer)
     set_optimizer_attribute(model, "eps_abs", 1e-4)
@@ -92,10 +97,11 @@ function run_trial(; type, n=100)
     optimize!(model)
     termination_status(model) != MOI.OPTIMAL && @warn "COSMO (indirect) did not solve the problem"
     time_cosmo_indirect = solve_time(model)
-    @info "    COSMO (indirect): $(time_cosmo_indirect)"
+    @info "    time: $(round(time_cosmo_indirect, digits=3))"
 
 
     # COSMO (direct)
+    @info "  -- COSMO (direct) --"
     model = construct_jump_model_logistic(A, b, λ1)
     set_optimizer(model, COSMO.Optimizer)
     set_optimizer_attribute(model, "eps_abs", 1e-4)
@@ -106,9 +112,10 @@ function run_trial(; type, n=100)
     optimize!(model)
     termination_status(model) != MOI.OPTIMAL && @warn "COSMO (direct) did not solve the problem"
     time_cosmo_direct = solve_time(model)
-    @info "    COSMO (direct): $(time_cosmo_direct)"
+    @info "    time: $(round(time_cosmo_direct, digits=3))"
 
     # Mosek
+    @info "  -- Mosek --"
     model = construct_jump_model_logistic(A, b, λ1)
     set_optimizer(model, Mosek.Optimizer)
     set_optimizer_attribute(model, "MSK_DPAR_INTPNT_CO_TOL_PFEAS", 1e-4)
@@ -119,24 +126,20 @@ function run_trial(; type, n=100)
     optimize!(model)
     termination_status(model) != MOI.OPTIMAL && @warn "Mosek did not solve the problem"
     time_mosek = solve_time(model)
-    @info "    Mosek: $(time_mosek)"
+    @info "    time: $(round(time_mosek, digits=3))"
 
 
     # FISTA
+    @info "  -- FISTA --"
     prob = GeNIADMM.LogisticSolver(A, b, λ1)
     GC.gc()
-    GeNIADMM.solve!(
-        prob; indirect=true, relax=false, max_iters=1, tol=1e-4, logging=true,
-        precondition=false, verbose=false, print_iter=100, agd_x_update=true,
-        rho_update_iter=10_000, multithreaded=true
-    )
     result_fista = GeNIADMM.solve!(
         prob; indirect=true, relax=false, max_iters=5_000, tol=1e-4, logging=true,
         precondition=false, verbose=false, print_iter=100, agd_x_update=true,
         rho_update_iter=10_000, multithreaded=true
     )
     time_fista = result_fista.log.solve_time + result_fista.log.setup_time
-    @info "    FISTA: $(time_fista)"
+    @info "    time: $(round(time_fista, digits=3))"
 
 
     savefile = joinpath(SAVEPATH, SAVEFILE*"-$type.jld2")
@@ -157,7 +160,8 @@ if !RAN_TRIALS
     run_trial(type="test")
     @info "Finished compiling"
     if !TEST_MODE
-        types = ["sparse", "sparse2"]
+        types = ["sparse2"]
+        # types = ["sparse", "sparse2"]
         for type in types
             run_trial(type=type)
             @info "Finished with type=$type"

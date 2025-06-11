@@ -20,7 +20,7 @@ function run_trial(n::Int; solvers=Set([:qp, :cosmo_indirect, :cosmo_direct, :os
     GC.gc()
     BLAS.set_num_threads(Sys.CPU_THREADS)
 
-    filename = "compare-$n-aug2024-2.jld2"
+    filename = "compare-$n-june2025-2.jld2"
     savefile = joinpath(SAVEPATH, filename)
     m = 2n
 
@@ -93,7 +93,8 @@ function run_trial(n::Int; solvers=Set([:qp, :cosmo_indirect, :cosmo_direct, :os
             num_threads=Sys.CPU_THREADS,
             norm_type=Inf,
             sketch_update_iter=5000,
-            max_time_sec=1800.
+            max_time_sec=1800.,
+            rho_update_iter=100,
         )
         result = solve!(solver; options=options)
     else
@@ -109,7 +110,8 @@ function run_trial(n::Int; solvers=Set([:qp, :cosmo_indirect, :cosmo_direct, :os
             precondition=false,
             num_threads=Sys.CPU_THREADS,
             norm_type=Inf,
-            max_time_sec=1800.
+            max_time_sec=1800.,
+            rho_update_iter=100,
         )
         result_npc = solve!(solver_npc; options=options)
     else
@@ -167,8 +169,7 @@ function run_trial(n::Int; solvers=Set([:qp, :cosmo_indirect, :cosmo_direct, :os
 end
 
 # n = 100 is just for compilation
-# ns = [250, 500, 1_000, 2_000, 4_000, 8_000, 16_000]
-ns = [250, 500]
+ns = [250, 500, 1_000, 2_000, 4_000, 8_000, 16_000]
 if !RAN_TRIALS
     run_trial(100)
     solvers = Set([:qp, :cosmo_indirect, :cosmo_direct, :osqp, :nopc, :mosek])

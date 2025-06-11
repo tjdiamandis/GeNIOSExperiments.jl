@@ -78,6 +78,7 @@ function construct_jump_model_elastic_net(A, b, γ, μ)
     @constraint(model, t .>= -x)
     
     # Define objective
+    # @objective(model, Min, 0.5 * (A*x - b)'*(A*x - b) + 0.5 * μ * x'*x + γ * sum(t))
     @objective(model, Min, 0.5 * z'*z + 0.5 * μ * x'*x + γ * sum(t))
     return model
 end

@@ -12,7 +12,7 @@ using GeNIOS
 const SAVEPATH = joinpath(@__DIR__, "saved", "5-portfolio")
 const SAVEFILE = "5-portfolio-may2025"
 const FIGS_PATH = joinpath(@__DIR__, "figures")
-const RAN_TRIALS = false
+const RAN_TRIALS = true
 
 # FOR QP SOLVER (custom operators)
 # P = γ*(F*F' + Diagonal(d))
@@ -173,10 +173,10 @@ function run_trial(n::Int; solvers=[:qp, :op, :custom, :cosmo_indirect, :cosmo_d
         GC.gc()
         solver = GeNIOS.QPSolver(P_eq, q_eq, M_eq, l_eq, u_eq; σ=0.0)
         result_qp = solve!(solver; options=options)
+        @info "\tFinished GeNIOS (eq qp), time: $(result_qp.log.setup_time + result_qp.log.solve_time)"
     else
         result_qp = nothing
     end
-    @info "\tFinished GeNIOS (eq qp), time: $(result_qp.log.setup_time + result_qp.log.solve_time)"
     
     if :qp_full ∈ solvers
         GC.gc()
@@ -329,10 +329,12 @@ function run_trial(n::Int; solvers=[:qp, :op, :custom, :cosmo_indirect, :cosmo_d
     return to_remove
 end
 
-ns = [250, 500, 1_000, 2_000, 4_000, 8_000, 16_000, 32_000, 64_000, 128_000, 256_000, 512_000, 1_024_000]
+# ns = [250, 500, 1_000, 2_000, 4_000, 8_000, 16_000, 32_000, 64_000, 128_000, 256_000, 512_000]
+ns = [512_000]
 if !RAN_TRIALS
     run_trial(100)
-    solvers = Set([:qp, :op, :custom, :cosmo_indirect, :cosmo_direct, :osqp, :qp_full, :mosek])
+    # solvers = Set([:qp, :op, :custom, :cosmo_indirect, :cosmo_direct, :osqp, :qp_full, :mosek])
+    solvers = Set([:op, :custom])
 
     @info "Starting trials..."
     for n in ns
@@ -424,7 +426,7 @@ timing_plt = plot(
     yticks=[1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3],
     minorgrid=true,
 )
-savefig(timing_plt, joinpath(FIGS_PATH, "5-portfolio-timing-2024.pdf"))
+savefig(timing_plt, joinpath(FIGS_PATH, "5-portfolio-timing-june2025.pdf"))
 
 # Table
 println("\\begin{tabular}{@{}lrrrrrrrr@{}}")
