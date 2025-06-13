@@ -90,20 +90,25 @@ function softplus(model, t, u)
     @constraint(model, [-t, 1, z[2]] in MOI.ExponentialCone())
 end
 
-function construct_jump_model_logistic(A, b, γ)
-    n, p = size(A)
+function construct_jump_model_logistic(A, b, λ)
+    m, n = size(A)
     model = Model()
-    @variable(model, x[1:p])
-    @variable(model, t[1:n])
-    for i in 1:n
+    @variable(model, x[1:n])
+    @variable(model, y[1:m])
+    for i in 1:m
         u = (A[i, :]' * x) * b[i]
-        softplus(model, t[i], u)
+        softplus(model, y[i], u)
     end
+
     # Add ℓ1 regularization
-    @variable(model, 0.0 <= reg)
-    @constraint(model, [reg; x] in MOI.NormOneCone(p + 1))
+    @variable(model, t[1:n])
+    @constraint(model, t .>= x)
+    @constraint(model, t .>= -x)
+    # @variable(model, 0.0 <= reg)
+    # @constraint(model, [reg; x] in MOI.NormOneCone(p + 1))
+
     # Define objective
-    @objective(model, Min, sum(t) + γ * reg)
+    @objective(model, Min, sum(t) + λ * sum(t))
     return model
 end
 

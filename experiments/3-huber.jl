@@ -9,7 +9,7 @@ using GeNIOS
 const SAVEPATH = joinpath(@__DIR__, "saved", "3-huber")
 const FIGS_PATH = joinpath(@__DIR__, "figures")
 
-const RAN_TRIALS = false
+const RAN_TRIALS = true
 
 ## Generating the problem data
 function generate_data_huber(; 

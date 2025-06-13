@@ -14,7 +14,7 @@ const DATAPATH = joinpath(@__DIR__, "data")
 const DATAFILE_SPARSE = joinpath(DATAPATH, "real-sim.jld2")
 const DATAFILE_SPARSE_2 = joinpath(DATAPATH, "news20.jld2")
 const SAVEPATH = joinpath(@__DIR__, "saved")
-const SAVEFILE = "2-logistic-compare-june2025"
+const SAVEFILE = "2-logistic-compare-june2025-new"
 const FIGS_PATH = joinpath(@__DIR__, "figures")
 
 # Set this to false if you have not yet downloaded the real-sim dataset
@@ -23,24 +23,31 @@ const HAVE_DATA_SPARSE2 = true
 const RAN_TRIALS = false
 const TEST_MODE = false
 
-function run_trial(; type, n=100)
+function run_trial(; type, n=100, verbose=false)
     if type == "test"
         # real-sim dataset
         A_full, b_full = load_sparse_data(file=DATAFILE_SPARSE, have_data=HAVE_DATA_SPARSE, dataset_id=1578)
         A_full = A_full[1:n, 1:2n]
         b_full = b_full[1:n]
+
+        # normalize A_full
+        A_full = A_full ./ norm(A_full, Inf)
+
     elseif type == "sparse"
         # real-sim dataset
         A_full, b_full = load_sparse_data(file=DATAFILE_SPARSE, have_data=HAVE_DATA_SPARSE, dataset_id=1578)
-        n = size(A_full, 2)
-        A_full = A_full[1:n, :]
-        b_full = b_full[1:n]
+        # normalize A_full
+        A_full = A_full ./ norm(A_full, Inf)
+
     elseif type == "sparse2"
         # news20 dataset
         A_full, b_full = load_sparse_data(file=DATAFILE_SPARSE_2, have_data=HAVE_DATA_SPARSE2, dataset_id=1594)
         # make into two classes:
         b_full[b_full .<= 10] .= -1.0
         b_full[b_full .> 10] .= 1.0
+
+        # normalize A_full
+        A_full = A_full ./ norm(A_full, Inf)
     else
         error("Unknown type: $type")
     end
@@ -48,7 +55,7 @@ function run_trial(; type, n=100)
 
     # Reguarlization parameters
     λ1_max = norm(A_full'*b_full, Inf)
-    λ1 = 0.05*λ1_max
+    λ1 = 0.1*λ1_max
     λ2 = 0.0
 
     A = Diagonal(b_full) * A_full
@@ -72,10 +79,9 @@ function run_trial(; type, n=100)
         α=1.6,
         eps_abs=1e-4,
         eps_rel=1e-4,
-        verbose=false,
+        verbose=verbose,
         precondition=true,
         ρ0=10.0,
-        rho_update_iter=1000,
         max_iters=5000,
         max_time_sec=1800.
     )
@@ -86,13 +92,13 @@ function run_trial(; type, n=100)
 
     # COSMO (indirect)
     @info "  -- COSMO (indirect) --"
-    model = construct_jump_model_logistic(A, b, λ1)
+    model = construct_jump_model_logistic(A_full, b_full, λ1)
     set_optimizer(model, COSMO.Optimizer)
     set_optimizer_attribute(model, "eps_abs", 1e-4)
     set_optimizer_attribute(model, "eps_rel", 1e-4)
     set_optimizer_attribute(model, "kkt_solver", CGIndirectKKTSolver)
-    set_optimizer_attribute(model, "verbose", false)
-    set_time_limit_sec(model, 1800.0)
+    set_optimizer_attribute(model, "verbose", verbose)
+    set_time_limit_sec(model, 600.0)
     GC.gc()
     optimize!(model)
     termination_status(model) != MOI.OPTIMAL && @warn "COSMO (indirect) did not solve the problem"
@@ -102,12 +108,12 @@ function run_trial(; type, n=100)
 
     # COSMO (direct)
     @info "  -- COSMO (direct) --"
-    model = construct_jump_model_logistic(A, b, λ1)
+    model = construct_jump_model_logistic(A_full, b_full, λ1)
     set_optimizer(model, COSMO.Optimizer)
     set_optimizer_attribute(model, "eps_abs", 1e-4)
     set_optimizer_attribute(model, "eps_rel", 1e-4)
-    set_optimizer_attribute(model, "verbose", false)
-    set_time_limit_sec(model, 1800.0)
+    set_optimizer_attribute(model, "verbose", verbose)
+    set_time_limit_sec(model, 600.0)
     GC.gc()
     optimize!(model)
     termination_status(model) != MOI.OPTIMAL && @warn "COSMO (direct) did not solve the problem"
@@ -116,12 +122,14 @@ function run_trial(; type, n=100)
 
     # Mosek
     @info "  -- Mosek --"
-    model = construct_jump_model_logistic(A, b, λ1)
+    model = construct_jump_model_logistic(A_full, b_full, λ1)
     set_optimizer(model, Mosek.Optimizer)
     set_optimizer_attribute(model, "MSK_DPAR_INTPNT_CO_TOL_PFEAS", 1e-4)
     set_optimizer_attribute(model, "MSK_DPAR_INTPNT_CO_TOL_DFEAS", 1e-4)
-    set_time_limit_sec(model, 1800.0)
-    set_silent(model)
+    set_time_limit_sec(model, 600.0)
+    if !verbose
+        set_silent(model)
+    end
     GC.gc()
     optimize!(model)
     termination_status(model) != MOI.OPTIMAL && @warn "Mosek did not solve the problem"
@@ -131,11 +139,11 @@ function run_trial(; type, n=100)
 
     # FISTA
     @info "  -- FISTA --"
-    prob = GeNIADMM.LogisticSolver(A, b, λ1)
+    prob = GeNIADMM.LogisticSolver(A_full, b_full, λ1)
     GC.gc()
     result_fista = GeNIADMM.solve!(
         prob; indirect=true, relax=false, max_iters=5_000, tol=1e-4, logging=true,
-        precondition=false, verbose=false, print_iter=100, agd_x_update=true,
+        precondition=false, verbose=verbose, print_iter=100, agd_x_update=true,
         rho_update_iter=10_000, multithreaded=true
     )
     time_fista = result_fista.log.solve_time + result_fista.log.setup_time
@@ -160,10 +168,9 @@ if !RAN_TRIALS
     run_trial(type="test")
     @info "Finished compiling"
     if !TEST_MODE
-        types = ["sparse2"]
-        # types = ["sparse", "sparse2"]
+        types = ["sparse", "sparse2"]
         for type in types
-            run_trial(type=type)
+            run_trial(type=type, verbose=true)
             @info "Finished with type=$type"
         end
     end
@@ -171,16 +178,28 @@ end
 @info "Finished with all trials"
 
 
-println("\\begin{tabular}{@{}lrrrrr@{}}")
+println("\\begin{tabular}{@{}lrrr@{}}")
 println("\\toprule")
 println("Dataset & GeNIOS & COSMO (indirect) & COSMO (direct) & Mosek & FISTA \\\\")
 println("\\midrule")
 for type in ["sparse", "sparse2"]
     savefile = joinpath(SAVEPATH, SAVEFILE*"-$type.jld2")
-    time_genios, time_cosmo_indirect, time_cosmo_direct, time_mosek, time_fista = 
-        load(savefile, "time_genios", "time_cosmo_indirect", "time_cosmo_direct", "time_mosek", "time_fista")
+    time_genios, 
+    time_cosmo_indirect, 
+    time_cosmo_direct, 
+    time_mosek,
+    time_fista = 
+        load(savefile, 
+            "time_genios", 
+            "time_cosmo_indirect", 
+            "time_cosmo_direct", 
+            "time_mosek", 
+            "time_fista"
+        )
     
-    println("$type & $(@sprintf("%.3f", time_genios)) & $(@sprintf("%.3f", time_cosmo_indirect)) & $(@sprintf("%.3f", time_cosmo_direct)) & $(@sprintf("%.3f", time_mosek)) & $(@sprintf("%.3f", time_fista)) \\\\")
+    println(
+        "$type & $(@sprintf("%.3f", time_genios)) & $(@sprintf("%.3f", time_cosmo_indirect)) & $(@sprintf("%.3f", time_cosmo_direct)) & $(@sprintf("%.3f", time_mosek)) & $(@sprintf("%.3f", time_fista)) \\\\"
+    )
 end
 println("\\bottomrule")
 println("\\end{tabular}")

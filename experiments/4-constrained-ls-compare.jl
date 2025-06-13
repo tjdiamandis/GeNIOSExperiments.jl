@@ -14,7 +14,7 @@ const DATAFILE = joinpath(DATAPATH, "YearPredictionMSD.txt")
 const SAVEPATH = joinpath(@__DIR__, "saved", "4-constrained-ls-compare")
 const FIGS_PATH = joinpath(@__DIR__, "figures")
 
-const RAN_TRIALS = false
+const RAN_TRIALS = true
 
 function run_trial(n::Int; solvers=Set([:qp, :cosmo_indirect, :cosmo_direct, :osqp, :nopc, :mosek]))
     GC.gc()
@@ -185,7 +185,8 @@ if !RAN_TRIALS
 end
 
 function get_logs(n)
-    savefile = joinpath(SAVEPATH, "compare-$n-aug2024-2.jld2")
+    # savefile = joinpath(SAVEPATH, "compare-$n-aug2024-2.jld2")
+    savefile = joinpath(SAVEPATH, "compare-$n-june2025-2.jld2")
     r, r_npc, rc_indirect, rc_direct, r_osqp, r_mosek = load(savefile,
         "result", "result_npc", "result_cosmo_indirect", "result_cosmo_direct", "result_osqp", "result_mosek"
     )
@@ -252,7 +253,7 @@ timing_plt = plot(
     yticks=[1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3],
     minorgrid=true,
 )
-savefig(timing_plt, joinpath(FIGS_PATH, "4-constrained-ls-compare-timing-aug2024-2.pdf"))
+savefig(timing_plt, joinpath(FIGS_PATH, "4-constrained-ls-compare-timing-june2025-2.pdf"))
 
 inds_n = [2, 5, 7]
 # inds_trial = [1, 3, 5, 6]
@@ -290,7 +291,7 @@ setup_solve_plt = plot(
     bottommargin=10Plots.mm,
     topmargin=3Plots.mm,
 )
-savefig(setup_solve_plt, joinpath(FIGS_PATH, "4-constrained-ls-compare-setup-solve-aug2024-2.pdf"))
+savefig(setup_solve_plt, joinpath(FIGS_PATH, "4-constrained-ls-compare-setup-solve-june2025-2.pdf"))
 
 for (i, n) in enumerate(ns)
     println("$n & $(@sprintf("%.3f", timings[i,1])) & $(@sprintf("%.3f", timings[i,2])) & $(@sprintf("%.3f", timings[i,3])) & $(@sprintf("%.3f", timings[i,4])) & $(@sprintf("%.3f", timings[i,5])) & $(@sprintf("%.3f", timings[i,6])) \\\\")

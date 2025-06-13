@@ -15,7 +15,7 @@ const DATAFILE_DENSE = joinpath(DATAPATH, "YearPredictionMSD.txt")
 const DATAFILE_SPARSE = joinpath(DATAPATH, "real-sim.jld2")
 const DATAFILE_SPARSE_2 = joinpath(DATAPATH, "news20.jld2")
 const SAVEPATH = joinpath(@__DIR__, "saved")
-const SAVEFILE = "1-elastic-net-compare-june2025"
+const SAVEFILE = "1-elastic-net-compare-june2025-full"
 const FIGS_PATH = joinpath(@__DIR__, "figures")
 
 # Set this to false if you have not yet downloaded the real-sim dataset
@@ -29,18 +29,17 @@ function load_all_datasets()
     load_sparse_data(file=DATAFILE_SPARSE_2, have_data=false, dataset_id=1594)
 end
 
-function run_trial(; type, m=5_000, n=10_000, verbose=false)
+function run_trial(; type, m=10_000, n=20_000, verbose=false)
     if type == "sparse"
         # real-sim dataset
         A, b = load_sparse_data(file=DATAFILE_SPARSE, have_data=HAVE_DATA_SPARSE, dataset_id=1578)
-        n = size(A, 2)
-        A = A[1:n, :]
-        b = b[1:n]
+        # n = size(A, 2)
+        # A = A[1:n, :]
+        # b = b[1:n]
     elseif type == "sparse2"
         # news20 dataset
         A, b = load_sparse_data(file=DATAFILE_SPARSE_2, have_data=HAVE_DATA_SPARSE2, dataset_id=1594)
         m = size(A, 1)
-        A = A[:, 1:m]
     elseif type == "dense"
         A, b = get_augmented_data(m, n, DATAFILE_DENSE)
     else
@@ -171,8 +170,8 @@ if !RAN_TRIALS
 
     @info "Finished compiling"
     if !TEST_MODE
-        # types = ["sparse", "dense"]
-        types = ["dense"]
+        types = ["sparse", "dense"]
+        #types = ["dense"]
         for type in types
             run_trial(type=type; verbose=true)
             @info "Finished with type=$type"

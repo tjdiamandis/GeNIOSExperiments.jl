@@ -12,7 +12,7 @@ SAVEPATH = joinpath(@__DIR__, "saved")
 SAVEFILE = joinpath(SAVEPATH, "4-constrained-ls.jld2")
 FIGS_PATH = joinpath(@__DIR__, "figures")
 
-RAN_TRIALS = false
+RAN_TRIALS = true
 
 n = 10_000
 m = 2n

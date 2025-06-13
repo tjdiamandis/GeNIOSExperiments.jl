@@ -14,8 +14,8 @@ const SAVEPATH = joinpath(@__DIR__, "saved")
 const FIGS_PATH = joinpath(@__DIR__, "figures")
 
 # Set this to false if you have not yet downloaded the real-sim dataset
-const HAVE_DATA_SPARSE = false
-const RAN_TRIALS = false
+const HAVE_DATA_SPARSE = true
+const RAN_TRIALS = true
 
 
 function run_trial(; type, m=10_000, n=20_000, verbose=false)

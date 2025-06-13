@@ -13,12 +13,12 @@ const DATAPATH = joinpath(@__DIR__, "data")
 const DATAFILE_DENSE = joinpath(DATAPATH, "YearPredictionMSD.txt")
 const DATAFILE_SPARSE = joinpath(DATAPATH, "real-sim.jld2")
 const SAVEPATH = joinpath(@__DIR__, "saved", "2-logistic")
-const SAVEFILE = "2-logistic-genios-may2025.jld2"
+const SAVEFILE = "2-logistic-genios-june2025-norm.jld2"
 const FIGS_PATH = joinpath(@__DIR__, "figures")
 
 # Set this to false if you have not yet downloaded the real-sim dataset
-const HAVE_DATA_SPARSE = false
-const RAN_TRIALS = false
+const HAVE_DATA_SPARSE = true
+const RAN_TRIALS = true
 
 
 function build_genios_conic_model(A, b, λ1)
@@ -107,10 +107,13 @@ function run_trial()
     BLAS.set_num_threads(Sys.CPU_THREADS)
     A_full, b_full = load_sparse_data(file=DATAFILE_SPARSE, have_data=HAVE_DATA_SPARSE)
     N, n = size(A_full)
+    
+    # normalize A_full
+    A_full = A_full ./ norm(A_full, Inf)
 
     # Reguarlization parameters
     λ1_max = norm(A_full'*b_full, Inf)
-    λ1 = 0.05*λ1_max
+    λ1 = 0.1*λ1_max
     λ2 = 0.0
 
     A = Diagonal(b_full) * A_full
@@ -312,8 +315,10 @@ pstar = log_high_precision.obj_val[end]
 log_lbfgs = result_lbfgs.log
 log_conic = result_conic.log
 
-names = ["GeNIOS", "GeNIOS (no update)", "GeNIOS (no pc)", "GeNIOS (exact)", "GeNIOS (no pc, exact)", "ADMM LBFGS", "Conic"]
-logs = [log, log_no_pc_update, log_npc, log_exact, log_exact_npc, log_lbfgs, log_conic]
+# names = ["GeNIOS", "GeNIOS (no update)", "GeNIOS (no pc)", "GeNIOS (exact)", "GeNIOS (no pc, exact)", "ADMM LBFGS", "Conic"]
+# logs = [log, log_no_pc_update, log_npc, log_exact, log_exact_npc, log_lbfgs, log_conic]
+names = ["GeNIOS", "GeNIOS (no pc)", "GeNIOS (exact)", "GeNIOS (no pc, exact)", "ADMM LBFGS", "Conic"]
+logs = [log, log_npc, log_exact, log_exact_npc, log_lbfgs, log_conic]
 @info "\n\n ----- TIMING TABLE -----\n"
 print_timing_table(names, logs)
 
@@ -328,7 +333,7 @@ dual_gap_iter_plt = plot(;
     legend=:topright,
 )
 add_to_plot!(dual_gap_iter_plt, log.iter_time, log.dual_gap, "GeNIOS", :coral);
-add_to_plot!(dual_gap_iter_plt, log_no_pc_update.iter_time, log_no_pc_update.dual_gap, "No Update", :orange);
+# add_to_plot!(dual_gap_iter_plt, log_no_pc_update.iter_time, log_no_pc_update.dual_gap, "No Update", :orange);
 add_to_plot!(dual_gap_iter_plt, log_npc.iter_time, log_npc.dual_gap, "No PC", :purple);
 add_to_plot!(dual_gap_iter_plt, log_exact.iter_time, log_exact.dual_gap, "ADMM (pc)", :red);
 add_to_plot!(dual_gap_iter_plt, log_exact_npc.iter_time, log_exact_npc.dual_gap, "ADMM (no pc)", :mediumblue);
@@ -345,7 +350,7 @@ rp_iter_plot = plot(;
     legend=false,
 )
 add_to_plot!(rp_iter_plot, log.iter_time, log.rp, "GeNIOS", :coral);
-add_to_plot!(rp_iter_plot, log_no_pc_update.iter_time, log_no_pc_update.rp, "No Update", :orange);
+# add_to_plot!(rp_iter_plot, log_no_pc_update.iter_time, log_no_pc_update.rp, "No Update", :orange);
 add_to_plot!(rp_iter_plot, log_npc.iter_time, log_npc.rp, "No PC", :purple);
 add_to_plot!(rp_iter_plot, log_exact.iter_time, log_exact.rp, "ADMM (pc)", :red);
 add_to_plot!(rp_iter_plot, log_exact_npc.iter_time, log_exact_npc.rp, "ADMM (no pc)", :mediumblue);
@@ -362,7 +367,7 @@ rd_iter_plot = plot(;
     legend=false,
 )
 add_to_plot!(rd_iter_plot, log.iter_time, log.rd, "GeNIOS", :coral);
-add_to_plot!(rd_iter_plot, log_no_pc_update.iter_time, log_no_pc_update.rd, "No Update", :orange);
+# add_to_plot!(rd_iter_plot, log_no_pc_update.iter_time, log_no_pc_update.rd, "No Update", :orange);
 add_to_plot!(rd_iter_plot, log_npc.iter_time, log_npc.rd, "No PC", :purple);
 add_to_plot!(rd_iter_plot, log_exact.iter_time, log_exact.rd, "ADMM (pc)", :red);
 add_to_plot!(rd_iter_plot, log_exact_npc.iter_time, log_exact_npc.rd, "ADMM (no pc)", :mediumblue);
@@ -386,7 +391,7 @@ obj_val_iter_plot = plot(;
     legend=false,
 )
 add_to_plot!(obj_val_iter_plot, log.iter_time, (log.obj_val .- pstar) ./ pstar, "GeNIOS", :coral);
-add_to_plot!(obj_val_iter_plot, log_no_pc_update.iter_time, (log_no_pc_update.obj_val .- pstar) ./ pstar, "No Update", :orange);
+# add_to_plot!(obj_val_iter_plot, log_no_pc_update.iter_time, (log_no_pc_update.obj_val .- pstar) ./ pstar, "No Update", :orange);
 add_to_plot!(obj_val_iter_plot, log_npc.iter_time, (log_npc.obj_val .- pstar) ./ pstar, "No PC", :purple);
 add_to_plot!(obj_val_iter_plot, log_exact.iter_time, (log_exact.obj_val .- pstar) ./ pstar, "ADMM (pc)", :red);
 add_to_plot!(obj_val_iter_plot, log_exact_npc.iter_time, (log_exact_npc.obj_val .- pstar) ./ pstar, "ADMM (no pc)", :mediumblue);

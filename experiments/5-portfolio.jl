@@ -398,6 +398,7 @@ function get_timing(logs)
 end
 
 
+ns = [250, 500, 1_000, 2_000, 4_000, 8_000, 16_000, 32_000, 64_000, 128_000, 256_000, 512_000]
 timings = zeros(length(ns), 8)
 setup_times = zeros(length(ns), 8)
 solve_times = zeros(length(ns), 8)
