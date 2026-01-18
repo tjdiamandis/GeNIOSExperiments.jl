@@ -20,12 +20,6 @@ This document describes all the datasets required to run the experiments in GeNI
 1. Download from UCI Machine Learning Repository: https://archive.ics.uci.edu/dataset/203/yearpredictionmsd
 2. Place the downloaded `YearPredictionMSD.txt` file in `experiments/data/`
 
-**Citation**:
-```
-Bertin-Mahieux, T. (2011). Year Prediction MSD [Dataset]. UCI Machine Learning Repository.
-https://doi.org/10.24432/C5NS3H
-```
-
 ### 2. Real-sim Dataset (OpenML 1578)
 
 **File**: `real-sim.jld2` (generated automatically)  
@@ -48,35 +42,6 @@ Alternatively, you can download manually:
 1. Visit: https://www.openml.org/d/1578
 2. The experiments will automatically cache it as `real-sim.jld2`
 
-### 3. News20 Dataset (OpenML 1594)
-
-**File**: `news20.jld2` (generated automatically)  
-**Used by**: Elastic net comparison experiments, logistic regression comparison experiments  
-**Location**: `experiments/data/news20.jld2`
-
-**Description**:
-- 20 Newsgroups text classification dataset
-- 19,928 instances with 62,062 features
-- Document classification across 20 newsgroup categories
-- Created by Ken Lang for Newsweeder research
-
-**How to obtain**:
-The dataset is automatically downloaded using OpenML:
-```julia
-using OpenML
-dataset = OpenML.load(1594)  # Downloads news20 dataset
-```
-
-Alternatively, you can download manually:
-1. Visit: https://www.openml.org/d/1594
-2. The experiments will automatically cache it as `news20.jld2`
-
-**Citation**:
-```
-Ken Lang. Newsweeder: Learning to filter netnews. 
-In Proceedings of the Twelfth International Conference on Machine Learning, 
-pages 331-339, 1995.
-```
 
 ## Setup Instructions
 
@@ -103,8 +68,5 @@ In the experiment files, you'll find these flags that control dataset loading:
 
 ## Storage Requirements
 
-- `YearPredictionMSD.txt`: ~40 MB
-- `real-sim.jld2`: Size varies (cached from OpenML)
-- `news20.jld2`: Size varies (cached from OpenML)
-
-Total storage: Approximately 100-200 MB for all datasets.
+- `YearPredictionMSD.txt`: ~450 MB
+- `real-sim.jld2`: ~60 MB

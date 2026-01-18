@@ -1,7 +1,5 @@
 # GeNIOSExperiments
 
-# GeNIOSExperiments
-
 This repository contains the experimental code used in the paper for the [GeNIOS.jl](https://github.com/tjdiamandis/GeNIOS.jl) solver. GeNIOS is a first-order solver for convex optimization problems.
 
 ## Overview
